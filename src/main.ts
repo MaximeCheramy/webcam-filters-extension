@@ -6,7 +6,7 @@ class MediaStreamWithEffect extends MediaStream {
     video.srcObject = originalStream
     video.autoplay = true
 
-    const canvas = document.createElement('canvas' )
+    const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d')!
 
     const { width, height } = originalStream.getVideoTracks()[0].getSettings()

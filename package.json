@@ -9,7 +9,10 @@
   },
   "author": "",
   "license": "ISC",
+  "prettier": "prettier-config-standard",
   "devDependencies": {
-    "esbuild": "0.14.27"
+    "esbuild": "0.14.27",
+    "prettier": "2.6.0",
+    "prettier-config-standard": "5.0.0"
   }
 }
