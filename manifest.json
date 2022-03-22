@@ -1,0 +1,18 @@
+{
+  "name": "Hello, World!",
+  "version": "1.0",
+  "manifest_version": 3,
+  "content_scripts": [
+    {
+      "matches": ["https://*/*"],
+      "js": ["build/inject.js"],
+      "all_frames": true,
+      "run_at": "document_start"
+    }
+  ],
+  "action": {},
+  "web_accessible_resources": [{
+    "resources": ["build/main.js"],
+    "matches": ["https://*/*"]
+  }]
+}
