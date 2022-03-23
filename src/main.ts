@@ -1,31 +1,45 @@
-class MediaStreamWithEffect extends MediaStream {
+class MediaStreamWrapper {
+  stream: MediaStream
+  private context: CanvasRenderingContext2D
+  private video: HTMLVideoElement
+  private intervalId: number
+  private canvas: HTMLCanvasElement
+  
   constructor(originalStream: MediaStream) {
-    super(originalStream)
+    this.video = document.createElement('video')
+    this.video.srcObject = originalStream
+    this.video.autoplay = true
 
-    const video = document.createElement('video')
-    video.srcObject = originalStream
-    video.autoplay = true
-
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('2d')!
+    this.canvas = document.createElement('canvas')
+    this.context = this.canvas.getContext('2d')!
 
     const { width, height } = originalStream.getVideoTracks()[0].getSettings()
-    canvas.width = width!
-    canvas.height = height!
+    this.canvas.width = width!
+    this.canvas.height = height!
 
     const fps = 30
-    const stream = canvas.captureStream(fps)
-    stream.addEventListener('inactive', () => {
+    this.stream = this.canvas.captureStream(fps)
+    this.stream.addEventListener('inactive', () => {
       originalStream.getTracks().forEach((track) => track.stop())
-      context.clearRect(0, 0, width!, height!)
-      video.srcObject = null
+      this.context!.clearRect(0, 0, width!, height!)
+      this.video!.srcObject = null
     })
 
-    setInterval(() => {
-      context.drawImage(video, Math.random() * 10, Math.random() * 10)
+    this.intervalId = setInterval(() => {
+      this.draw()
     }, 1000 / fps)
+  }
 
-    return stream
+  draw () {
+    if (this.context != null && this.video != null) {
+      this.context.drawImage(this.video, Math.random() * 10, Math.random() * 10)
+    }
+  }
+
+  destroy() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+    }
   }
 }
 
@@ -41,7 +55,7 @@ function setup() {
 
       if (constraints && constraints.video && !constraints.audio) {
         // only apply effects on video media streams
-        return new MediaStreamWithEffect(mediaStream)
+        return new MediaStreamWrapper(mediaStream).stream!
       }
       return mediaStream
     } catch (e) {
