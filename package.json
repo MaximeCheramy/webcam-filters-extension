@@ -17,5 +17,9 @@
     "prettier-config-standard": "5.0.0",
     "typescript": "4.6.2",
     "webextension-polyfill": "0.9.0"
+  },
+  "dependencies": {
+    "@tensorflow-models/blazeface": "0.0.7",
+    "@tensorflow/tfjs-backend-webgl": "3.15.0"
   }
 }
