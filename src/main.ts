@@ -153,6 +153,9 @@ function setup() {
   }
 }
 
+// This is a temporary workaround, the time to find a better solution.
+// It seems that monkey patching of MediaDevices is done too late, probably because the JS is too big.
+// An idea could be to split in 2 JS: the one that overrides MediaDevices and the other that will load the heavy libs.
 setup()
 setInterval(() => {
   setup()
