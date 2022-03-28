@@ -12,7 +12,7 @@
   ],
   "action": {},
   "web_accessible_resources": [{
-    "resources": ["build/main.js"],
+    "resources": ["build/main.js", "build/monkey-patch.js"],
     "matches": ["https://*/*"]
   }],
   "icons": {

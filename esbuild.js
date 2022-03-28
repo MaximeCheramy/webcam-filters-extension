@@ -4,6 +4,7 @@ esbuild
   .build({
     entryPoints: [
       "./src/main.ts",
+      "./src/monkey-patch.ts",
       "./src/inject.ts"
     ],
     bundle: true,
