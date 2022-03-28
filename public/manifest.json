@@ -14,5 +14,8 @@
   "web_accessible_resources": [{
     "resources": ["build/main.js"],
     "matches": ["https://*/*"]
-  }]
+  }],
+  "icons": {
+    "128": "icon128.png"
+  }
 }
