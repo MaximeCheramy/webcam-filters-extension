@@ -132,20 +132,45 @@ function setup() {
   if (MediaDevices.prototype.patched) return
   console.log('Enable Webcam Filters')
 
+  const enumerateDevicesFn = MediaDevices.prototype.enumerateDevices
+  MediaDevices.prototype.enumerateDevices = async () => {
+    const currentDevices = await enumerateDevicesFn.call(navigator.mediaDevices)
+
+    const virtualCurrentDevice = currentDevices.filter(device => device.kind === 'videoinput').map(device => ({
+      deviceId: device.deviceId + '-virtual',
+      groupId: device.groupId,
+      kind: device.kind,
+      label: device.label + ' (Virtual)'
+    }))
+
+    return [...currentDevices, ...virtualCurrentDevice]
+  }
+
   const getUserMediaFn = MediaDevices.prototype.getUserMedia
   MediaDevices.prototype.patched = true
   MediaDevices.prototype.getUserMedia = async (constraints) => {
     try {
-      const mediaStream = await getUserMediaFn.call(
-        navigator.mediaDevices,
-        constraints
-      )
-
-      if (constraints && constraints.video && !constraints.audio) {
-        // only apply effects on video media streams
+      console.log(constraints)
+      if (constraints?.video?.deviceId?.exact != null && constraints.video.deviceId.exact.endsWith('-virtual')) {
+        const mediaStream = await getUserMediaFn.call(
+          navigator.mediaDevices,
+          {
+            ...constraints,
+            video: {
+              ...constraints.video,
+              deviceId: {
+                exact: constraints.video.deviceId.exact.replace(/-virtual$/, '')
+              }
+            }
+          }
+        )
         return new MediaStreamWrapper(mediaStream).stream!
+      } else {
+        return await getUserMediaFn.call(
+          navigator.mediaDevices,
+          constraints
+        )
       }
-      return mediaStream
     } catch (e) {
       console.error(e)
       throw e
