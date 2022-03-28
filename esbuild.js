@@ -9,7 +9,7 @@ esbuild
     bundle: true,
     minify: process.env.NODE_ENV === "production",
     target: ["chrome58", "firefox57"],
-    outdir: "./build",
+    outdir: "./public/build",
     define: {
       "process.env.NODE_ENV": `"${process.env.NODE_ENV}"`
     }
