@@ -61,7 +61,8 @@ function setup() {
   MediaDevices.prototype.getUserMedia = async (constraints) => {
     try {
       if (
-        constraints?.video?.deviceId?.exact != null &&
+        constraints?.video instanceof Object &&
+        constraints.video.deviceId?.exact != null &&
         constraints.video.deviceId.exact.endsWith('-virtual')
       ) {
         const mediaStream = await getUserMediaFn.call(navigator.mediaDevices, {
