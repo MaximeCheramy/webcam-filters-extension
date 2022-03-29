@@ -4,10 +4,11 @@ import { clamp } from './tools'
 
 let modelPromise = blazeface.load()
 
-let faceDetected: [number, number] | undefined
-let currentDelta: [number, number] | undefined
+let faceDetected: { x: number; y: number } | undefined
+let currentDelta: { x: number; y: number } | undefined
 let lastStaticTime = new Date().getTime()
 const thresholdCamera = 2000
+const zoom = 1.4
 
 let faceDetectionIntervalId: number | undefined
 
@@ -36,16 +37,16 @@ const intervalId = setInterval(() => {
           console.log(res)
           const bottomRight = res[0].bottomRight as [number, number]
           const topLeft = res[0].topLeft as [number, number]
-          const nFaceDetected = [
-            (topLeft[0] + bottomRight[0]) / 2,
-            (topLeft[1] + bottomRight[1]) / 2
-          ] as [number, number]
+          const nFaceDetected = {
+            x: (topLeft[0] + bottomRight[0]) / 2,
+            y: (topLeft[1] + bottomRight[1]) / 2
+          }
 
           const { width, height } = window.mediaStreamInstance.canvas
           if (
             faceDetected != null &&
-            Math.abs(faceDetected[0] - nFaceDetected[0]) < width / 15 &&
-            Math.abs(faceDetected[1] - nFaceDetected[1]) < height / 15
+            Math.abs(faceDetected.x - nFaceDetected.x) < width / 15 &&
+            Math.abs(faceDetected.y - nFaceDetected.y) < height / 15
           ) {
             lastStaticTime = new Date().getTime()
           }
@@ -66,46 +67,39 @@ function draw() {
   if (msi?.originalStream == null) {
     return
   }
-  const zoom = 1.4
 
-  const width = msi.canvas.width
-  const height = msi.canvas.height
-  if (faceDetected != null) {
-    let targetDelta: [number, number] = [
-      (width * (1 - zoom)) / 2 + (width / 2 - faceDetected[0]) * zoom,
-      (height * (1 - zoom)) / 2 + (height / 2 - faceDetected[1]) * zoom
-    ]
+  const { width, height } = msi.canvas
 
-    let delta: [number, number]
-    if (currentDelta != null) {
-      delta = [
-        currentDelta[0] * 0.95 + targetDelta[0] * 0.05,
-        currentDelta[1] * 0.95 + targetDelta[1] * 0.05
-      ]
-    } else {
-      delta = targetDelta
-    }
-    currentDelta = delta
-
-    delta[0] = clamp(delta[0], width * (1 - zoom), 0)
-    delta[1] = clamp(delta[1], height * (1 - zoom), 0)
-
-    msi.context.drawImage(
-      msi.video,
-      delta[0],
-      delta[1],
-      width * zoom,
-      height * zoom
-    )
-  } else {
-    msi.context.drawImage(
-      msi.video,
-      (width * (1 - zoom)) / 2,
-      (height * (1 - zoom)) / 2,
-      width * zoom,
-      height * zoom
-    )
+  if (faceDetected == null) {
+    faceDetected = { x: width / 2, y: height / 2 }
   }
+
+  const targetDelta = {
+    x: (width * (1 - zoom)) / 2 + (width / 2 - faceDetected.x) * zoom,
+    y: (height * (1 - zoom)) / 2 + (height / 2 - faceDetected.y) * zoom
+  }
+
+  let delta: { x: number; y: number }
+  if (currentDelta != null) {
+    delta = {
+      x: currentDelta.x * 0.95 + targetDelta.x * 0.05,
+      y: currentDelta.y * 0.95 + targetDelta.y * 0.05
+    }
+  } else {
+    delta = targetDelta
+  }
+  currentDelta = delta
+
+  delta.x = clamp(delta.x, width * (1 - zoom), 0)
+  delta.y = clamp(delta.y, height * (1 - zoom), 0)
+
+  msi.context.drawImage(
+    msi.video,
+    delta.x,
+    delta.y,
+    width * zoom,
+    height * zoom
+  )
 }
 
 setInterval(() => {
