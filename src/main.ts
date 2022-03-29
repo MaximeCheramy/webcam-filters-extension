@@ -9,6 +9,9 @@ let currentDelta: { x: number; y: number } | undefined
 let lastStaticTime = new Date().getTime()
 const thresholdCamera = 2000
 const zoom = 1.4
+const fps = 30
+const thresholdProbability = 0.95
+const targetSizeRatio = 1 / 15
 
 let faceDetectionIntervalId: number | undefined
 
@@ -29,12 +32,11 @@ const intervalId = setInterval(() => {
             await modelPromise
           ).estimateFaces(window.mediaStreamInstance.video)
         )
-          .filter((res) => res.probability! > 0.95)
+          .filter((res) => res.probability! > thresholdProbability)
           .sort(
             (a, b) => (b.probability! as number) - (a.probability! as number)
           )
         if (res.length > 0) {
-          console.log(res)
           const bottomRight = res[0].bottomRight as [number, number]
           const topLeft = res[0].topLeft as [number, number]
           const nFaceDetected = {
@@ -43,16 +45,19 @@ const intervalId = setInterval(() => {
           }
 
           const { width, height } = window.mediaStreamInstance.canvas
+          const now = new Date().getTime()
           if (
             faceDetected != null &&
-            Math.abs(faceDetected.x - nFaceDetected.x) < width / 15 &&
-            Math.abs(faceDetected.y - nFaceDetected.y) < height / 15
+            Math.abs(faceDetected.x - nFaceDetected.x) <
+              width * targetSizeRatio &&
+            Math.abs(faceDetected.y - nFaceDetected.y) <
+              height * targetSizeRatio
           ) {
-            lastStaticTime = new Date().getTime()
+            lastStaticTime = now
           }
 
-          if (lastStaticTime < new Date().getTime() - thresholdCamera) {
-            lastStaticTime = new Date().getTime()
+          if (lastStaticTime < now - thresholdCamera) {
+            lastStaticTime = now
             faceDetected = nFaceDetected
           }
         }
@@ -104,4 +109,4 @@ function draw() {
 
 setInterval(() => {
   draw()
-}, 1000 / 30)
+}, 1000 / fps)
