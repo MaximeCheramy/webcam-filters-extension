@@ -1,28 +1,15 @@
 import '@tensorflow/tfjs-backend-webgl'
 import * as blazeface from '@tensorflow-models/blazeface'
-
-interface Window {
-  mediaStreamInstance: MediaStreamWrapper
-}
+import { clamp } from './tools'
 
 let modelPromise = blazeface.load()
-
-function clamp(value: number, a: number, b: number): number {
-  if (value < a) {
-    return a
-  }
-  if (value > b) {
-    return b
-  }
-  return value
-}
 
 let faceDetected: [number, number] | undefined
 let currentDelta: [number, number] | undefined
 let lastStaticTime = new Date().getTime()
 const thresholdCamera = 2000
 
-let faceDetectionIntervalId : number | undefined
+let faceDetectionIntervalId: number | undefined
 
 const intervalId = setInterval(() => {
   if (window.mediaStreamInstance?.video != null) {

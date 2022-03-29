@@ -1,7 +1,3 @@
-interface Window {
-  mediaStreamInstance: MediaStreamWrapper
-}
-
 class MediaStreamWrapper {
   stream: MediaStream | undefined
   video: HTMLVideoElement
