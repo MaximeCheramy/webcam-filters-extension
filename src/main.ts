@@ -14,6 +14,7 @@ const thresholdProbability = 0.95
 const targetSizeRatio = 1 / 15
 
 let faceDetectionIntervalId: number | undefined
+let drawIntervalId: number | undefined
 
 const intervalId = setInterval(() => {
   if (window.mediaStreamInstance?.video != null) {
@@ -22,49 +23,56 @@ const intervalId = setInterval(() => {
       if (faceDetectionIntervalId != null) {
         clearInterval(faceDetectionIntervalId)
       }
-      faceDetectionIntervalId = setInterval(async () => {
-        const ENOUGH_DATA = 4
-        if (window.mediaStreamInstance.video.readyState != ENOUGH_DATA) {
-          return
-        }
-        const res = (
-          await (
-            await modelPromise
-          ).estimateFaces(window.mediaStreamInstance.video)
-        )
-          .filter((res) => res.probability! > thresholdProbability)
-          .sort(
-            (a, b) => (b.probability! as number) - (a.probability! as number)
-          )
-        if (res.length > 0) {
-          const bottomRight = res[0].bottomRight as [number, number]
-          const topLeft = res[0].topLeft as [number, number]
-          const nFaceDetected = {
-            x: (topLeft[0] + bottomRight[0]) / 2,
-            y: (topLeft[1] + bottomRight[1]) / 2
-          }
+      faceDetectionIntervalId = setInterval(faceDetect, 500)
 
-          const { width, height } = window.mediaStreamInstance.canvas
-          const now = new Date().getTime()
-          if (
-            faceDetected != null &&
-            Math.abs(faceDetected.x - nFaceDetected.x) <
-              width * targetSizeRatio &&
-            Math.abs(faceDetected.y - nFaceDetected.y) <
-              height * targetSizeRatio
-          ) {
-            lastStaticTime = now
-          }
-
-          if (lastStaticTime < now - thresholdCamera) {
-            lastStaticTime = now
-            faceDetected = nFaceDetected
-          }
-        }
-      }, 500)
+      if (drawIntervalId != null) {
+        clearInterval(drawIntervalId)
+      }
+      drawIntervalId = setInterval(draw, 1000 / fps)
     }
   }
 }, 500)
+
+async function faceDetect() {
+  const ENOUGH_DATA = 4
+  if (window.mediaStreamInstance.video.readyState != ENOUGH_DATA) {
+    return
+  }
+  const res = (
+    await (
+      await modelPromise
+    ).estimateFaces(window.mediaStreamInstance.video)
+  )
+    .filter((res) => res.probability! > thresholdProbability)
+    .sort(
+      (a, b) => (b.probability! as number) - (a.probability! as number)
+    )
+  if (res.length > 0) {
+    const bottomRight = res[0].bottomRight as [number, number]
+    const topLeft = res[0].topLeft as [number, number]
+    const nFaceDetected = {
+      x: (topLeft[0] + bottomRight[0]) / 2,
+      y: (topLeft[1] + bottomRight[1]) / 2
+    }
+
+    const { width, height } = window.mediaStreamInstance.canvas
+    const now = new Date().getTime()
+    if (
+      faceDetected != null &&
+      Math.abs(faceDetected.x - nFaceDetected.x) <
+        width * targetSizeRatio &&
+      Math.abs(faceDetected.y - nFaceDetected.y) <
+        height * targetSizeRatio
+    ) {
+      lastStaticTime = now
+    }
+
+    if (lastStaticTime < now - thresholdCamera) {
+      lastStaticTime = now
+      faceDetected = nFaceDetected
+    }
+  }
+}
 
 function draw() {
   const msi = window.mediaStreamInstance
@@ -107,6 +115,3 @@ function draw() {
   )
 }
 
-setInterval(() => {
-  draw()
-}, 1000 / fps)
