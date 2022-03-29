@@ -23,10 +23,17 @@ const intervalId = setInterval(() => {
         if (window.mediaStreamInstance.video.readyState != ENOUGH_DATA) {
           return
         }
-        const res = await (
-          await modelPromise
-        ).estimateFaces(window.mediaStreamInstance.video)
+        const res = (
+          await (
+            await modelPromise
+          ).estimateFaces(window.mediaStreamInstance.video)
+        )
+          .filter((res) => res.probability! > 0.95)
+          .sort(
+            (a, b) => (b.probability! as number) - (a.probability! as number)
+          )
         if (res.length > 0) {
+          console.log(res)
           const bottomRight = res[0].bottomRight as [number, number]
           const topLeft = res[0].topLeft as [number, number]
           const nFaceDetected = [
