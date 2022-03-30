@@ -2,106 +2,130 @@ import '@tensorflow/tfjs-backend-webgl'
 import * as blazeface from '@tensorflow-models/blazeface'
 import { clamp } from './tools'
 
-let model: blazeface.BlazeFaceModel | undefined
+export default class FaceTracking {
+  private model: blazeface.BlazeFaceModel | undefined
 
-let faceDetected: { x: number; y: number } | undefined
-let currentDelta: { x: number; y: number } | undefined
-let lastStaticTime = new Date().getTime()
-const thresholdCamera = 2000
-const zoom = 1.4
-const fps = 30
-const thresholdProbability = 0.95
-const targetSizeRatio = 1 / 15
+  private faceDetected: { x: number; y: number } | undefined
+  private currentDelta: { x: number; y: number } | undefined
+  private lastStaticTime = new Date().getTime()
+  private thresholdCamera: number
+  private zoom: number
+  private fps: number
+  private thresholdProbability: number
+  private targetSizeRatio: number
 
-let faceDetectionIntervalId: number | undefined
-let drawIntervalId: number | undefined
+  private faceDetectionIntervalId: number | undefined
+  private drawIntervalId: number | undefined
 
-export default async function setup() {
-  if (model == null) {
-    model = await blazeface.load()
+  constructor({
+    zoom = 1.4,
+    fps = 30,
+    thresholdProbability = 0.95,
+    targetSizeRatio = 1 / 15,
+    thresholdCamera = 2000
+  } = {}) {
+    this.zoom = zoom
+    this.fps = fps
+    this.thresholdCamera = thresholdCamera
+    this.thresholdProbability = thresholdProbability
+    this.targetSizeRatio = targetSizeRatio
   }
 
-  if (faceDetectionIntervalId != null) {
-    clearInterval(faceDetectionIntervalId)
-  }
-  faceDetectionIntervalId = setInterval(faceDetect, 500)
-
-  if (drawIntervalId != null) {
-    clearInterval(drawIntervalId)
-  }
-  drawIntervalId = setInterval(draw, 1000 / fps)
-}
-
-async function faceDetect() {
-  const ENOUGH_DATA = 4
-  if (window.mediaStreamInstance.video.readyState != ENOUGH_DATA) {
-    return
-  }
-  const res = (await model!.estimateFaces(window.mediaStreamInstance.video))
-    .filter((res) => res.probability! > thresholdProbability)
-    .sort((a, b) => (b.probability! as number) - (a.probability! as number))
-  if (res.length > 0) {
-    const bottomRight = res[0].bottomRight as [number, number]
-    const topLeft = res[0].topLeft as [number, number]
-    const nFaceDetected = {
-      x: (topLeft[0] + bottomRight[0]) / 2,
-      y: (topLeft[1] + bottomRight[1]) / 2
+  async start() {
+    if (this.model == null) {
+      this.model = await blazeface.load()
     }
 
-    const { width, height } = window.mediaStreamInstance.canvas
-    const now = new Date().getTime()
-    if (
-      faceDetected != null &&
-      Math.abs(faceDetected.x - nFaceDetected.x) < width * targetSizeRatio &&
-      Math.abs(faceDetected.y - nFaceDetected.y) < height * targetSizeRatio
-    ) {
-      lastStaticTime = now
+    if (this.faceDetectionIntervalId != null) {
+      clearInterval(this.faceDetectionIntervalId)
+    }
+    this.faceDetectionIntervalId = setInterval(() => this.faceDetect(), 500)
+
+    if (this.drawIntervalId != null) {
+      clearInterval(this.drawIntervalId)
+    }
+    this.drawIntervalId = setInterval(() => this.draw(), 1000 / this.fps)
+  }
+
+  private async faceDetect() {
+    const ENOUGH_DATA = 4
+    if (window.mediaStreamInstance.video.readyState != ENOUGH_DATA) {
+      return
+    }
+    const res = (
+      await this.model!.estimateFaces(window.mediaStreamInstance.video)
+    )
+      .filter((res) => res.probability! > this.thresholdProbability)
+      .sort((a, b) => (b.probability! as number) - (a.probability! as number))
+    if (res.length > 0) {
+      const bottomRight = res[0].bottomRight as [number, number]
+      const topLeft = res[0].topLeft as [number, number]
+      const nFaceDetected = {
+        x: (topLeft[0] + bottomRight[0]) / 2,
+        y: (topLeft[1] + bottomRight[1]) / 2
+      }
+
+      const { width, height } = window.mediaStreamInstance.canvas
+      const now = new Date().getTime()
+      if (
+        this.faceDetected != null &&
+        Math.abs(this.faceDetected.x - nFaceDetected.x) <
+          width * this.targetSizeRatio &&
+        Math.abs(this.faceDetected.y - nFaceDetected.y) <
+          height * this.targetSizeRatio
+      ) {
+        this.lastStaticTime = now
+      }
+
+      if (this.lastStaticTime < now - this.thresholdCamera) {
+        this.lastStaticTime = now
+        this.faceDetected = nFaceDetected
+      }
+    }
+  }
+
+  private draw() {
+    const msi = window.mediaStreamInstance
+
+    if (msi?.originalStream == null) {
+      return
     }
 
-    if (lastStaticTime < now - thresholdCamera) {
-      lastStaticTime = now
-      faceDetected = nFaceDetected
+    const { width, height } = msi.canvas
+
+    if (this.faceDetected == null) {
+      this.faceDetected = { x: width / 2, y: height / 2 }
     }
-  }
-}
 
-function draw() {
-  const msi = window.mediaStreamInstance
-
-  if (msi?.originalStream == null) {
-    return
-  }
-
-  const { width, height } = msi.canvas
-
-  if (faceDetected == null) {
-    faceDetected = { x: width / 2, y: height / 2 }
-  }
-
-  const targetDelta = {
-    x: (width * (1 - zoom)) / 2 + (width / 2 - faceDetected.x) * zoom,
-    y: (height * (1 - zoom)) / 2 + (height / 2 - faceDetected.y) * zoom
-  }
-
-  let delta: { x: number; y: number }
-  if (currentDelta != null) {
-    delta = {
-      x: currentDelta.x * 0.95 + targetDelta.x * 0.05,
-      y: currentDelta.y * 0.95 + targetDelta.y * 0.05
+    const targetDelta = {
+      x:
+        (width * (1 - this.zoom)) / 2 +
+        (width / 2 - this.faceDetected.x) * this.zoom,
+      y:
+        (height * (1 - this.zoom)) / 2 +
+        (height / 2 - this.faceDetected.y) * this.zoom
     }
-  } else {
-    delta = targetDelta
+
+    let delta: { x: number; y: number }
+    if (this.currentDelta != null) {
+      delta = {
+        x: this.currentDelta.x * 0.95 + targetDelta.x * 0.05,
+        y: this.currentDelta.y * 0.95 + targetDelta.y * 0.05
+      }
+    } else {
+      delta = targetDelta
+    }
+    this.currentDelta = delta
+
+    delta.x = clamp(delta.x, width * (1 - this.zoom), 0)
+    delta.y = clamp(delta.y, height * (1 - this.zoom), 0)
+
+    msi.context.drawImage(
+      msi.video,
+      delta.x,
+      delta.y,
+      width * this.zoom,
+      height * this.zoom
+    )
   }
-  currentDelta = delta
-
-  delta.x = clamp(delta.x, width * (1 - zoom), 0)
-  delta.y = clamp(delta.y, height * (1 - zoom), 0)
-
-  msi.context.drawImage(
-    msi.video,
-    delta.x,
-    delta.y,
-    width * zoom,
-    height * zoom
-  )
 }
