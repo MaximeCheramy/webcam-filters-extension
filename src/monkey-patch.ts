@@ -19,6 +19,8 @@ class MediaStreamWrapper {
     const { width, height } = originalStream.getVideoTracks()[0].getSettings()
     this.canvas!.width = width!
     this.canvas!.height = height!
+    this.video.width = width!
+    this.video.height = height!
 
     const fps = 30
     this.stream = this.canvas.captureStream(fps)
