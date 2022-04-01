@@ -1,12 +1,18 @@
 import FaceTracking from './face-tracking'
+import ScreenShare from './screen-share'
 
-const faceTracking = new FaceTracking()
+const filters = {
+  faceTracking: new FaceTracking(),
+  screenShare: new ScreenShare()
+}
+
+const activeFilter = filters.screenShare
 
 const intervalId = setInterval(() => {
   if (window.mediaStreamInstance?.video != null) {
     clearInterval(intervalId)
     window.mediaStreamInstance.video.onloadeddata = () => {
-      faceTracking.start()
+      activeFilter.start()
     }
   }
 }, 500)
