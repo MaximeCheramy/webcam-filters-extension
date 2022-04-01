@@ -6,7 +6,7 @@ const filters = {
   screenShare: new ScreenShare()
 }
 
-const activeFilter = filters.screenShare
+const activeFilter = filters.faceTracking
 
 const intervalId = setInterval(() => {
   if (window.mediaStreamInstance?.video != null) {
