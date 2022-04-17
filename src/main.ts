@@ -16,3 +16,7 @@ const intervalId = setInterval(() => {
     }
   }
 }, 500)
+
+window.addEventListener('message', ({ data }) => {
+  console.log(data)
+})

@@ -10,12 +10,18 @@
       "run_at": "document_start"
     }
   ],
-  "action": {},
+  "action": {
+    "default_title": "Webcam Filters",
+    "default_popup": "popup.html"
+  },
   "web_accessible_resources": [{
     "resources": ["build/main.js", "build/monkey-patch.js"],
     "matches": ["https://*/*"]
   }],
   "icons": {
     "128": "icon128.png"
-  }
+  },
+  "permissions": [
+    "storage"
+  ]
 }

@@ -7,3 +7,9 @@ scriptMP.src = browser.runtime.getURL('build/monkey-patch.js')
 const scriptMain = document.createElement('script')
 scriptMain.src = browser.runtime.getURL('build/main.js')
 ;(document.head || document.documentElement).appendChild(scriptMain)
+
+browser.runtime.onMessage.addListener(function (request, sender) {
+  if (sender.id) {
+    window.postMessage(request, '*')
+  }
+})
