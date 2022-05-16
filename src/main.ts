@@ -18,5 +18,7 @@ const intervalId = setInterval(() => {
 }, 500)
 
 window.addEventListener('message', ({ data }) => {
-  console.log(data)
+  if (data?.senderId === 'webcam-filter-inject-script') {
+    console.log(data.request)
+  }
 })

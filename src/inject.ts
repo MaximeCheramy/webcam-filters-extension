@@ -10,6 +10,9 @@ scriptMain.src = browser.runtime.getURL('build/main.js')
 
 browser.runtime.onMessage.addListener(function (request, sender) {
   if (sender.id) {
-    window.postMessage(request, '*')
+    window.postMessage({
+      senderId: 'webcam-filter-inject-script',
+      request
+    }, '*')
   }
 })
