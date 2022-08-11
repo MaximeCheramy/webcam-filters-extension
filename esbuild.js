@@ -2,7 +2,7 @@ const esbuild = require('esbuild')
 
 esbuild
   .build({
-    entryPoints: ['./src/main.ts', './src/monkey-patch.ts', './src/inject.ts'],
+    entryPoints: ['./src/main.ts', './src/monkey-patch.ts', './src/inject.ts', './src/popup/main.tsx'],
     bundle: true,
     minify: process.env.NODE_ENV === 'production',
     target: ['chrome58', 'firefox57'],
