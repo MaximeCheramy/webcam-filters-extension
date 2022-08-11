@@ -6,7 +6,7 @@ const filters = {
   screenShare: new ScreenShare()
 }
 
-const activeFilter = filters.faceTracking
+let activeFilter: FaceTracking | ScreenShare = filters.faceTracking
 
 const intervalId = setInterval(() => {
   if (window.mediaStreamInstance?.video != null) {
@@ -17,8 +17,26 @@ const intervalId = setInterval(() => {
   }
 }, 500)
 
-window.addEventListener('message', ({ data }) => {
-  if (data?.senderId === 'webcam-filter-inject-script') {
-    console.log(data.request)
+window.addEventListener(
+  'message',
+  ({
+    data
+  }: {
+    data: {
+      senderId: string,
+      request: {
+        type: 'update-settings'
+        data: { filter: 'faceTracking' | 'screenShare' }
+      }
+    }
+  }) => {
+    if (data?.senderId === 'webcam-filter-inject-script') {
+      console.log(data)
+      if (data.request.type == 'update-settings') {
+        activeFilter.stop()
+        activeFilter = filters[data.request.data.filter]
+        activeFilter.start()
+      }
+    }
   }
-})
+)

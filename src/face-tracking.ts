@@ -47,6 +47,20 @@ export default class FaceTracking {
     this.drawIntervalId = setInterval(() => this.draw(), 1000 / this.fps)
   }
 
+  async stop() {
+    this.model = undefined
+
+    if (this.faceDetectionIntervalId != null) {
+      clearInterval(this.faceDetectionIntervalId)
+      this.faceDetectionIntervalId = undefined
+    }
+
+    if (this.drawIntervalId != null) {
+      clearInterval(this.drawIntervalId)
+      this.drawIntervalId = undefined
+    }
+  }
+
   private async faceDetect() {
     const ENOUGH_DATA = 4
     if (window.mediaStreamInstance.video.readyState != ENOUGH_DATA) {

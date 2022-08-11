@@ -24,6 +24,13 @@ export default class ScreenShare {
     msi.canvas.height = height!
   }
 
+  async stop() {
+    if (this.drawIntervalId != null) {
+      clearInterval(this.drawIntervalId)
+      this.drawIntervalId = undefined
+    }
+  }
+
   private async draw() {
     const msi = window.mediaStreamInstance
 
